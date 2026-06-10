@@ -126,13 +126,54 @@ During the development of this application, several technical and business desig
 
 ## 📸 Screenshots
 
-To showcase the premium interface and interactive visualizations, screenshots are saved in the root `/screenshots` directory.
+All screens showcase the premium dark/light mode UI with smooth animations, real-time charts, and paginated customer lists.
 
-| Login Screen | Dashboard (KPIs) | Customer List (Pagination) | Monthly Revenue (Bar Chart) | Monthly Orders (Line Chart) |
-|---|---|---|---|---|
-| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) | ![Customers](screenshots/customers.png) | ![Revenue Chart](screenshots/reports_bar.png) | ![Orders Chart](screenshots/reports_line.png) |
+### 🔐 Login Screen
+<p align="center">
+  <img src="screenshots/login_screen.png" width="280" alt="Login Screen"/>
+</p>
 
-> **Note**: If submitting via Git repository, please make sure the corresponding images are placed in the `/screenshots` directory in PNG format.
+> Secure sign-in with email & password. Credentials are persisted via `flutter_secure_storage`.
+
+---
+
+### 🏠 Dashboard
+<p align="center">
+  <img src="screenshots/dashboard_screen.png" width="280" alt="Sales Dashboard"/>
+</p>
+
+> Real-time KPI cards showing **Total Revenue ($50,000)**, **Total Customers (120)**, and **Total Sales (450)** with percentage growth indicators.
+
+---
+
+### 👥 Customers Screen
+<p align="center">
+  <img src="screenshots/Customer_screen.png" width="280" alt="Customers List with Pagination"/>
+</p>
+
+> Paginated customer list (20 per page) with infinite scroll, live search by name/email, and total count badge.
+
+---
+
+### 📊 Reports Screen
+
+<p align="center">
+  <img src="screenshots/Report1_screen.png" width="280" alt="Reports - Light Mode"/>
+  &nbsp;&nbsp;
+  <img src="screenshots/Report2_screen.png" width="280" alt="Reports - Dark Mode"/>
+</p>
+
+> Interactive bar chart for **Monthly Revenue** and line chart toggle for **Monthly Orders**. Includes summary KPI cards for Revenue, Orders, and Growth.
+
+---
+
+### 🌗 Light & Dark Theme
+
+<p align="center">
+  <img src="screenshots/light&dark_theme.png" width="280" alt="Light and Dark Theme"/>
+</p>
+
+> One-tap theme toggle between Light and Dark modes. User preference is persisted across sessions via `shared_preferences`.
 
 ---
 
