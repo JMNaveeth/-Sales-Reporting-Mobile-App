@@ -146,3 +146,12 @@ To showcase the premium interface and interactive visualizations, screenshots ar
 - **`shared_preferences`**: Local key-value storage for app configurations.
 - **`intl`**: Currency and date formatting utility.
 - **`shimmer`**: Graceful loading skeleton animations.
+
+## 👤 Submitted By
+ 
+**Muhammed Naveeth**
+Flutter & Full Stack Developer
+ 
+- 🌐 Portfolio: [my-portfolio-naveeth.vercel.app](https://my-portfolio-naveeth.vercel.app)
+- 💼 LinkedIn: [linkedin.com/in/muhammed-naveeth](https://www.linkedin.com/in/muhammed-naveeth)
+- 🐙 GitHub: [github.com/JMNaveeth](https://github.com/JMNaveeth)
