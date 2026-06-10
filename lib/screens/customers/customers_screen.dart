@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/customer_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/customer_tile.dart';
 
@@ -37,11 +38,17 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(customersProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Customers'),
         actions: [
+          IconButton(
+            icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            onPressed: () => ref.read(themeProvider.notifier).toggle(),
+            tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Chip(

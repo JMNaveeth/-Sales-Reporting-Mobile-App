@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/report_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../repositories/report_repository.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_theme.dart';
@@ -15,6 +16,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final user = ref.watch(currentUserProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,6 +42,11 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            onPressed: () => ref.read(themeProvider.notifier).toggle(),
+            tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
             onPressed: () =>

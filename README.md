@@ -1,141 +1,148 @@
-# Sales Reporting App — Cyber Mas Solutions Flutter Assessment
+# Sales Reporting Mobile App 📊
 
-A Flutter mobile application for sales reporting, built as part of the **Cyber Mas Solutions Flutter Developer Trainee Assessment**.
-
----
-
-## Features
-
-### Core Requirements
-
-| Feature | Status |
-|---|---|
-| Login (Email + Password + Validation) | ✅ Complete |
-| POST /login + Save token securely | ✅ Complete |
-| Persist login after app restart | ✅ Complete |
-| Dashboard (User Name, Total Customers, Total Sales, Total Revenue) | ✅ Complete |
-| GET /customers with Name, Email, Phone | ✅ Complete |
-| Customer search by name | ✅ Complete |
-| Pull to refresh (Customers) | ✅ Complete |
-| GET /reports (Monthly Sales, Revenue, Orders) | ✅ Complete |
-| Logout (clear token + redirect to Login) | ✅ Complete |
-
-### Bonus Features
-
-| Feature | Status |
-|---|---|
-| fl_chart sales chart (line + bar) | ✅ Complete |
-| Light/Dark theme support | ✅ Complete |
-| Unit tests — Login Service | ✅ Complete |
-| Unit tests — Customer Repository | ✅ Complete |
-| Customer pagination | ✅ Complete |
+A premium, high-performance Flutter mobile application built as part of the **Cyber Mas Solutions Flutter Developer Trainee Assessment**. This application serves as a comprehensive sales dashboard with real-time charting, paginated customer lists, robust auth state management, dynamic light/dark theme persistence, and an isolated unit/widget testing suite.
 
 ---
 
-## State Management: Riverpod
+## 🚀 Setup Instructions
 
-This project uses **Flutter Riverpod (v2)** for state management.
+Follow these steps to get the application running on your local machine:
 
-### Why Riverpod?
+### Prerequisites
+- **Flutter SDK**: `^3.19.0` or later stable version.
+- **Dart SDK**: `^3.3.0`.
+- **Target OS/Simulator**: Android Emulator / iOS Simulator / Web Browser / Desktop.
 
-- **Compile-safe**: Providers are type-safe and caught at compile time, unlike Provider which can throw runtime `ProviderNotFoundException`.
-- **No BuildContext required**: Providers can be read/watched anywhere without needing a widget context, making service and repository layers cleaner.
-- **Testability**: Riverpod's `ProviderContainer` makes unit testing trivial — providers are isolated and overridable without needing a widget tree.
-- **AsyncValue**: Built-in `AsyncValue<T>` eliminates boilerplate for loading/error/data states that you'd otherwise write manually.
-- **StateNotifier pattern**: Enforces unidirectional data flow and immutable state, making bugs easier to trace and fix.
+### Step-by-Step Installation
+
+1. **Clone the Repository**
+   ```bash
+   git clone <repository-url>
+   cd sales_report_app
+   ```
+
+2. **Install Dependencies**
+   Fetch all required packages using the Flutter CLI:
+   ```bash
+   flutter pub get
+   ```
+
+3. **Verify Code Health**
+   Run the static analyzer to confirm there are no compilation warnings or errors:
+   ```bash
+   flutter analyze
+   ```
+
+4. **Run Unit & Widget Tests**
+   Execute the test suite to verify the mock API service, repository pagination logic, and login widget routing:
+   ```bash
+   flutter test
+   ```
+
+5. **Launch the Application**
+   Run the app on a connected device or simulator:
+   ```bash
+   # Runs in debug mode
+   flutter run
+
+   # Runs in release mode (optimal performance)
+   flutter run --release
+   ```
+
+6. **Build Release Packages (Optional)**
+   Generate production-ready binaries:
+   ```bash
+   # Android APK
+   flutter build apk --release
+
+   # iOS App Bundle (macOS required)
+   flutter build ipa
+   ```
 
 ---
 
-## Architecture
+## 🏗️ Architecture Explanation
+
+The application follows a **Clean Layered MVVM (Model-View-ViewModel)** architectural pattern. This guarantees separation of concerns, robust testability, and scalability.
 
 ```
 lib/
-├── models/            # Pure data classes (CustomerModel, ReportModel, UserModel)
-├── services/          # API layer (Dio + interceptors) and Storage (SecureStorage + SharedPrefs)
-├── repositories/      # Business logic layer between services and providers
-├── screens/           # UI screens: login, dashboard, customers, reports
-├── widgets/           # Reusable UI components (StatCard, CustomerTile, LoadingOverlay)
-├── providers/         # Riverpod state notifiers for auth, customers, reports
-├── utils/             # Theme, router, constants, formatters, exceptions
-└── main.dart          # App entry point
+├── models/            # Domain Models (pure data serialization/deserialization)
+├── services/          # Data Sources (direct APIs, HTTP client, local database/storage)
+├── repositories/      # Business Logic & Repository Layer (combines API & storage)
+├── providers/         # ViewModels / State Management (notifiers exposing UI states)
+├── screens/           # Views (UI pages: login, dashboard, customers, reports)
+├── widgets/           # Reusable UI components (KPI cards, loaders, customer list tiles)
+└── utils/             # Cross-cutting concerns (theme, router, formatters, constants)
+```
+
+### 1. Layers & Responsibilities
+- **Views (Screens/Widgets)**: Declarative UI built using vanilla Flutter. They watch Riverpod providers to reactively redraw when state changes, and trigger events/actions back to providers.
+- **ViewModels (Providers)**: Built using `flutter_riverpod`. ViewModels encapsulate screen-specific state (loading, error, list data). They use `AsyncValue` to handle asynchronous operations elegantly, preventing view redraw bugs.
+- **Repository Layer**: Acts as a single source of truth for the ViewModels. The repositories decide whether to serve cached data from the `StorageService` or fetch fresh data from the `ApiService`, decoupling network logic from state management.
+- **Service Layer**: 
+  - **ApiService**: Encapsulates network operations using `Dio`. It manages API headers, request/response timeouts, response interceptors (such as auth token injection), and mapping of HTTP status codes to custom exceptions.
+  - **StorageService**: Handles local data persistence. Sensitive credentials (auth token) are stored in secure OS-level keychain storage, while non-sensitive preferences (current user session data, theme modes) are written to fast persistent key-value store.
+
+### 2. State Management Justification (Why Riverpod?)
+As required by the assessment, Riverpod was chosen over standard Provider or Bloc for the following architectural benefits:
+- **Compile-time Safety**: Eliminates common runtime errors (such as `ProviderNotFoundException`) by defining providers as global constants.
+- **No BuildContext Dependency**: Allows reading/watching state inside repository and service layers without coupling logic to widget contexts.
+- **Ease of Testing**: Providers can easily be overridden with mock implementations in unit and widget tests using `ProviderScope` overrides, eliminating the need to construct complex mock widget trees.
+- **AsyncValue Support**: Native support for loading, error, and data states, making UI reaction to API calls highly concise and elegant.
+
+### 3. Data Flow Diagram
+```mermaid
+graph LR
+    UI[UI Screens & Widgets] <-->|reads & watches| Providers[Riverpod Providers]
+    Providers -->|calls| Repositories[Repositories]
+    Repositories -->|requests| ApiService[API Service / Dio]
+    Repositories -->|persists/reads| StorageService[Storage Service / Secure Storage]
 ```
 
 ---
 
-## API Layer
+## 💡 Assumptions Made
 
-- **Base URL**: `https://api.cybermassolutions.com/v1`
-- **Auth**: Bearer token injected via Dio interceptor on every request
-- **Mock Mode**: A mock interceptor handles all API calls locally for development/testing
-- **Error Handling**: Typed exceptions (`NetworkException`, `AuthException`, `ServerException`, etc.)
+During the development of this application, several technical and business design assumptions were made to align with assessment requirements:
 
-### Endpoints
+1. **Mock API Interceptor Fallback**
+   - *Assumption*: Since a hosted live endpoint wasn't provided, we assume the host `https://api.cybermassolutions.com/v1` is resolved by a built-in `MockInterceptor` in our Dio configuration. This interceptor yields realistic mock responses mimicking network lag and status codes.
+   - *Impact*: Allows full local simulation of features (like dashboard metrics, reports, pagination) with no internet access or external API dependency.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/login` | Login + receive token |
-| POST | `/auth/logout` | Logout |
-| GET | `/customers` | Paginated customer list |
-| GET | `/reports` | Monthly/yearly reports |
-| GET | `/dashboard/stats` | Dashboard summary |
+2. **Security & Session Persistence**
+   - *Assumption*: The auth token should be secure and persist after the app closes. 
+   - *Impact*: We assume a hybrid storage model where the token resides in `flutter_secure_storage` (backed by iOS Keychain/Android Keystore) and non-sensitive user metadata sits in `shared_preferences`.
 
----
+3. **Theme Management Mode**
+   - *Assumption*: The app should load the device's system theme by default but let the user manually override it.
+   - *Impact*: We store user theme choice ('light' or 'dark') in `shared_preferences`. Tapping the Sun/Moon toggle icons in the AppBar stores the manual preference, overriding the system defaults immediately.
 
-## Local Storage
-
-| Data | Storage | Reason |
-|---|---|---|
-| Auth token | `flutter_secure_storage` | Encrypted, OS keychain — secure |
-| User info | `shared_preferences` | Non-sensitive, fast read |
+4. **Pagination Window size**
+   - *Assumption*: Large datasets for customers should load dynamically without degrading UI performance.
+   - *Impact*: We assume a standard page size of 20 customers. Pagination is triggered automatically when the user scrolls within 200 pixels of the bottom of the customer list view.
 
 ---
 
-## Error Handling
+## 📸 Screenshots
 
-- **No internet**: Shows `NetworkException` with retry button
-- **API failures**: Typed exceptions surfaced via `AuthError` state or error UI
-- **Invalid login**: Validation on form + snackbar error message
-- **Empty responses**: Empty state screens with icons and messaging
-- **Session expiry**: 401 interceptor clears storage and redirects to login
+To showcase the premium interface and interactive visualizations, screenshots are saved in the root `/screenshots` directory.
 
----
+| Login Screen | Dashboard (KPIs) | Customer List (Pagination) | Monthly Revenue (Bar Chart) | Monthly Orders (Line Chart) |
+|---|---|---|---|---|
+| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) | ![Customers](screenshots/customers.png) | ![Revenue Chart](screenshots/reports_bar.png) | ![Orders Chart](screenshots/reports_line.png) |
 
-## Running the App
-
-```bash
-# Install dependencies
-flutter pub get
-
-# Run in debug mode
-flutter run
-
-# Run tests
-flutter test
-
-# Build APK
-flutter build apk --release
-```
+> **Note**: If submitting via Git repository, please make sure the corresponding images are placed in the `/screenshots` directory in PNG format.
 
 ---
 
-## Dependencies
+## 🛠️ Main Dependencies Used
 
-| Package | Version | Purpose |
-|---|---|---|
-| flutter_riverpod | ^2.5.1 | State management |
-| go_router | ^13.2.0 | Navigation |
-| dio | ^5.4.3+1 | HTTP client |
-| flutter_secure_storage | ^9.2.2 | Secure token storage |
-| shared_preferences | ^2.2.3 | User preferences |
-| fl_chart | ^0.68.0 | Sales charts |
-| intl | ^0.19.0 | Date/currency formatting |
-| equatable | ^2.0.5 | Value equality for models |
-| shimmer | ^3.0.0 | Loading skeleton UI |
-
----
-
-## Compliance
-
-**Assessment compliance: 100%**
-
-All core requirements, technical requirements, error handling, UI requirements, and bonus features are implemented.
+- **`flutter_riverpod`**: Robust, compile-safe state management.
+- **`go_router`**: Declarative routing system supporting deep linking and redirection guards.
+- **`dio`**: Powerful HTTP client with support for custom interceptors, request cancellation, and global configuration.
+- **`fl_chart`**: Modern, highly customizable data charts.
+- **`flutter_secure_storage`**: Secure credential encryption.
+- **`shared_preferences`**: Local key-value storage for app configurations.
+- **`intl`**: Currency and date formatting utility.
+- **`shimmer`**: Graceful loading skeleton animations.
