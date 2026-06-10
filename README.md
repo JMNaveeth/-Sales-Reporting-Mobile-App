@@ -157,13 +157,39 @@ All screens showcase the premium dark/light mode UI with smooth animations, real
 
 ### 📊 Reports Screen
 
+#### 📈 Monthly Revenue — Bar Chart
 <p align="center">
-  <img src="screenshots/Report1_screen.png" width="280" alt="Reports - Light Mode"/>
-  &nbsp;&nbsp;
-  <img src="screenshots/Report2_screen.png" width="280" alt="Reports - Dark Mode"/>
+  <img src="screenshots/Report1_screen.png" width="280" alt="Monthly Revenue Bar Chart"/>
 </p>
 
-> Interactive bar chart for **Monthly Revenue** and line chart toggle for **Monthly Orders**. Includes summary KPI cards for Revenue, Orders, and Growth.
+> Interactive **bar chart** visualizing monthly revenue from Jan–Jun. KPI summary cards show **$50,000 Revenue**, **450 Orders**, and **+12.4% Growth**.
+
+---
+
+#### 📉 Monthly Orders — Line Chart
+<p align="center">
+  <img src="screenshots/Report2_screen.png" width="280" alt="Monthly Orders Line Chart"/>
+</p>
+
+> Toggle to **line chart** view for monthly order trends. Smooth green curve showing growth from 50 orders in Jan to 130+ in Jun.
+
+---
+
+#### 🗓️ Monthly Breakdown
+<p align="center">
+  <img src="screenshots/Report3_screen.png" width="280" alt="Monthly Breakdown"/>
+</p>
+
+> Scrollable **monthly breakdown** table listing orders and revenue per month (Jan–Jun) with animated progress bars.
+
+---
+
+#### 🏆 Top Products
+<p align="center">
+  <img src="screenshots/Report4_screen.png" width="280" alt="Top Products"/>
+</p>
+
+> Ranked **Top 5 products** by revenue — Enterprise Suite ($18,000 · 36%), Pro Plan ($12,850 · 25.7%), and more — each with a visual progress bar.
 
 ---
 
