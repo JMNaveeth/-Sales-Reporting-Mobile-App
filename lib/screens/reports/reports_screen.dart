@@ -7,6 +7,8 @@ import '../../providers/theme_provider.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/animated_list_item.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
@@ -28,53 +30,103 @@ class ReportsScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
             onPressed: () => ref.read(reportsProvider.notifier).loadReport(),
+            tooltip: 'Refresh Reports',
           ),
         ],
       ),
-      body: _buildBody(context, state, ref),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              AppTheme.primaryColor.withOpacity(0.01),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: _buildBody(context, state, ref),
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context, ReportsState state, WidgetRef ref) {
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const _ReportsSkeleton();
     }
 
     if (state.error != null) {
       return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.bar_chart_rounded,
+                  size: 48,
+                  color: AppTheme.errorColor,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                state.error!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => ref.read(reportsProvider.notifier).loadReport(),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(140, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (state.report == null) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.bar_chart, size: 64, color: Color(0xFF94A3B8)),
-            const SizedBox(height: 12),
-            Text(state.error!,
-                style: const TextStyle(color: Color(0xFF94A3B8))),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.bar_chart_rounded, size: 48, color: AppTheme.primaryColor),
+            ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () =>
-                  ref.read(reportsProvider.notifier).loadReport(),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(140, 44)),
-              child: const Text('Retry'),
+            Text(
+              'No report data available',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),
       );
     }
 
-    if (state.report == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.bar_chart, size: 64, color: Color(0xFF94A3B8)),
-            SizedBox(height: 12),
-            Text('No report data available.'),
-          ],
-        ),
-      );
-    }
-
     return RefreshIndicator(
+      color: AppTheme.primaryColor,
       onRefresh: () => ref.read(reportsProvider.notifier).loadReport(),
       child: _ReportContent(report: state.report!),
     );
@@ -105,7 +157,7 @@ class _ReportContentState extends State<_ReportContent> {
         children: [
           // ── Summary KPI Cards ────────────────────────────────────────────
           _SummaryRow(report: widget.report),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
           // ── Chart Title + Toggle ─────────────────────────────────────────
           Row(
@@ -114,7 +166,8 @@ class _ReportContentState extends State<_ReportContent> {
               Text(
                 _chartMode == 0 ? 'Monthly Revenue' : 'Monthly Orders',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
                     ),
               ),
               _ChartToggle(
@@ -127,7 +180,9 @@ class _ReportContentState extends State<_ReportContent> {
 
           // ── Chart ────────────────────────────────────────────────────────
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
             child: _chartMode == 0
                 ? _RevenueBarChart(
                     key: const ValueKey('bar'),
@@ -138,13 +193,14 @@ class _ReportContentState extends State<_ReportContent> {
                     sales: widget.report.monthlySales,
                   ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
 
           // ── Monthly Breakdown List ───────────────────────────────────────
           Text(
             'Monthly Breakdown',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
           ),
           const SizedBox(height: 12),
@@ -152,33 +208,46 @@ class _ReportContentState extends State<_ReportContent> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: widget.report.monthlySales.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, __) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final sale = widget.report.monthlySales[index];
-              return _MonthlySaleTile(
-                sale: sale,
-                maxRevenue: widget.report.monthlySales
-                    .map((s) => s.revenue)
-                    .reduce((a, b) => a > b ? a : b),
+              return AnimatedListItem(
+                index: index,
+                child: _MonthlySaleTile(
+                  sale: sale,
+                  maxRevenue: widget.report.monthlySales
+                      .map((s) => s.revenue)
+                      .reduce((a, b) => a > b ? a : b),
+                ),
               );
             },
           ),
 
           // ── Top Products ─────────────────────────────────────────────────
           if (widget.report.topProducts.isNotEmpty) ...[
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
             Text(
               'Top Products',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
                   ),
             ),
             const SizedBox(height: 12),
-            ...widget.report.topProducts
-                .map((p) => _TopProductTile(product: p)),
+            ...widget.report.topProducts.asMap().entries.map((entry) {
+              final index = entry.key;
+              final product = entry.value;
+              return AnimatedListItem(
+                index: index,
+                child: _TopProductTile(
+                  product: product,
+                  rank: index + 1,
+                ),
+              );
+            }),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -194,23 +263,28 @@ class _ChartToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1,
+        ),
       ),
       padding: const EdgeInsets.all(3),
       child: Row(
         children: [
           _ToggleBtn(
               label: 'Revenue',
-              icon: Icons.bar_chart,
+              icon: Icons.bar_chart_rounded,
               active: selected == 0,
               onTap: () => onChanged(0)),
           const SizedBox(width: 4),
           _ToggleBtn(
               label: 'Orders',
-              icon: Icons.show_chart,
+              icon: Icons.show_chart_rounded,
               active: selected == 1,
               onTap: () => onChanged(1)),
         ],
@@ -236,22 +310,33 @@ class _ToggleBtn extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: active ? AppTheme.primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
-            Icon(icon,
-                size: 14,
-                color: active ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant),
-            const SizedBox(width: 4),
+            Icon(
+              icon,
+              size: 14,
+              color: active ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
                 color: active
                     ? Colors.white
                     : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -274,16 +359,25 @@ class _RevenueBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final maxRevenue =
         sales.map((s) => s.revenue).reduce((a, b) => a > b ? a : b);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 240,
-      padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+      height: 250,
+      padding: const EdgeInsets.fromLTRB(8, 20, 20, 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: isDark ? AppTheme.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: BarChart(
         BarChartData(
@@ -303,10 +397,10 @@ class _RevenueBarChart extends StatelessWidget {
                   children: [
                     TextSpan(
                       text: Formatters.currency(rod.toY),
-                      style: TextStyle(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.9),
+                      style: const TextStyle(
+                        color: AppTheme.primaryLight,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                       ),
                     )
                   ],
@@ -331,7 +425,7 @@ class _RevenueBarChart extends StatelessWidget {
                       Formatters.monthShort(sales[idx].month),
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -349,6 +443,7 @@ class _RevenueBarChart extends StatelessWidget {
                     Formatters.compactCurrency(value),
                     style: TextStyle(
                       fontSize: 10,
+                      fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   );
@@ -365,10 +460,7 @@ class _RevenueBarChart extends StatelessWidget {
             drawVerticalLine: false,
             horizontalInterval: maxRevenue / 4,
             getDrawingHorizontalLine: (value) => FlLine(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.3),
+              color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFE2E8F0),
               strokeWidth: 1,
             ),
           ),
@@ -381,17 +473,17 @@ class _RevenueBarChart extends StatelessWidget {
               barRods: [
                 BarChartRodData(
                   toY: sale.revenue,
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
                       AppTheme.primaryColor,
-                      AppTheme.primaryColor.withValues(alpha: 0.6),
+                      AppTheme.primaryDark,
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
-                  width: 18,
+                  width: 16,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(6),
+                    top: Radius.circular(5),
                   ),
                 ),
               ],
@@ -413,16 +505,25 @@ class _OrdersLineChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final maxOrders =
         sales.map((s) => s.orders.toDouble()).reduce((a, b) => a > b ? a : b);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 240,
-      padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+      height: 250,
+      padding: const EdgeInsets.fromLTRB(8, 20, 20, 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: isDark ? AppTheme.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: LineChart(
         LineChartData(
@@ -439,7 +540,7 @@ class _OrdersLineChart extends StatelessWidget {
                     '${Formatters.monthFromInt(sale.month)}\n${sale.orders} Orders',
                     const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                         fontSize: 12),
                   );
                 }).toList();
@@ -463,7 +564,7 @@ class _OrdersLineChart extends StatelessWidget {
                       Formatters.monthShort(sales[idx].month),
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -481,6 +582,7 @@ class _OrdersLineChart extends StatelessWidget {
                     value.toInt().toString(),
                     style: TextStyle(
                       fontSize: 10,
+                      fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   );
@@ -496,10 +598,7 @@ class _OrdersLineChart extends StatelessWidget {
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) => FlLine(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.3),
+              color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFE2E8F0),
               strokeWidth: 1,
             ),
           ),
@@ -512,15 +611,15 @@ class _OrdersLineChart extends StatelessWidget {
               isCurved: true,
               curveSmoothness: 0.35,
               color: AppTheme.successColor,
-              barWidth: 3,
+              barWidth: 3.5,
               isStrokeCapRound: true,
               dotData: FlDotData(
                 show: true,
                 getDotPainter: (spot, percent, bar, index) =>
                     FlDotCirclePainter(
-                  radius: 4,
+                  radius: 5,
                   color: Colors.white,
-                  strokeWidth: 2.5,
+                  strokeWidth: 3,
                   strokeColor: AppTheme.successColor,
                 ),
               ),
@@ -528,8 +627,8 @@ class _OrdersLineChart extends StatelessWidget {
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.successColor.withValues(alpha: 0.25),
-                    AppTheme.successColor.withValues(alpha: 0.0),
+                    AppTheme.successColor.withOpacity(0.2),
+                    AppTheme.successColor.withOpacity(0.0),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -561,7 +660,7 @@ class _SummaryRow extends StatelessWidget {
             color: AppTheme.primaryColor,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: _KpiCard(
             label: 'Orders',
@@ -570,12 +669,12 @@ class _SummaryRow extends StatelessWidget {
             color: AppTheme.infoColor,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: _KpiCard(
             label: 'Growth',
             value: '${report.growthRate > 0 ? '+' : ''}${report.growthRate.toStringAsFixed(1)}%',
-            icon: Icons.trending_up,
+            icon: Icons.trending_up_rounded,
             color: AppTheme.successColor,
           ),
         ),
@@ -597,29 +696,39 @@ class _KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: isDark ? color.withOpacity(0.06) : color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        border: Border.all(color: color.withOpacity(0.12), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   color: color,
+                  letterSpacing: -0.2,
                 ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
@@ -639,14 +748,16 @@ class _MonthlySaleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = maxRevenue > 0 ? sale.revenue / maxRevenue : 0.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: isDark ? AppTheme.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1,
         ),
       ),
       child: Column(
@@ -660,15 +771,15 @@ class _MonthlySaleTile extends StatelessWidget {
                   Text(
                     Formatters.monthFromInt(sale.month),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${sale.orders} orders',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
                         ),
                   ),
                 ],
@@ -682,18 +793,15 @@ class _MonthlySaleTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.3),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppTheme.primaryColor.withValues(alpha: 0.75),
+              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppTheme.primaryColor,
               ),
             ),
           ),
@@ -706,20 +814,47 @@ class _MonthlySaleTile extends StatelessWidget {
 // ── Top Product Tile ──────────────────────────────────────────────────────────
 
 class _TopProductTile extends StatelessWidget {
-  const _TopProductTile({required this.product});
+  const _TopProductTile({required this.product, required this.rank});
   final TopProduct product;
+  final int rank;
+
+  Widget _getRankWidget(int rank) {
+    if (rank == 1) {
+      return const Text('🥇 ', style: TextStyle(fontSize: 18));
+    } else if (rank == 2) {
+      return const Text('🥈 ', style: TextStyle(fontSize: 18));
+    } else if (rank == 3) {
+      return const Text('🥉 ', style: TextStyle(fontSize: 18));
+    }
+    return Container(
+      width: 20,
+      height: 20,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        '$rank',
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          color: isDark ? AppTheme.cardDark : Colors.white,
           borderRadius: BorderRadius.circular(AppConstants.cardRadius),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            width: 1,
           ),
         ),
         child: Column(
@@ -728,12 +863,21 @@ class _TopProductTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    product.name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                  child: Row(
+                    children: [
+                      _getRankWidget(rank),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.1,
+                              ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                    overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -746,7 +890,7 @@ class _TopProductTile extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -755,26 +899,61 @@ class _TopProductTile extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: product.percentage / 100,
                       minHeight: 6,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .outlineVariant
-                          .withValues(alpha: 0.3),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.infoColor.withValues(alpha: 0.75),
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppTheme.infoColor,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Text(
                   '${product.percentage.toStringAsFixed(1)}%',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Reports Skeleton ─────────────────────────────────────────────────────────
+
+class _ReportsSkeleton extends StatelessWidget {
+  const _ReportsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerLoading(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppConstants.pagePadding),
+        child: Column(
+          children: [
+            Row(
+              children: const [
+                Expanded(child: ShimmerBox(height: 90)),
+                SizedBox(width: 12),
+                Expanded(child: ShimmerBox(height: 90)),
+                SizedBox(width: 12),
+                Expanded(child: ShimmerBox(height: 90)),
+              ],
+            ),
+            const SizedBox(height: 28),
+            const ShimmerBox(height: 250),
+            const SizedBox(height: 28),
+            const ShimmerBox(height: 36, width: 200),
+            const SizedBox(height: 12),
+            const ShimmerBox(height: 80),
+            const SizedBox(height: 8),
+            const ShimmerBox(height: 80),
+            const SizedBox(height: 8),
+            const ShimmerBox(height: 80),
           ],
         ),
       ),

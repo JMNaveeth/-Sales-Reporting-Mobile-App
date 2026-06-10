@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
@@ -28,6 +29,17 @@ class AppTheme {
     Color(0xFF0891B2),
   ];
 
+  // ── Page transitions ────────────────────────────────────────────────────────
+  static const _pageTransitionsTheme = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+    },
+  );
+
   // ── Light Theme ──────────────────────────────────────────────────────────────
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
@@ -36,25 +48,29 @@ class AppTheme {
       surface: surfaceLight,
     );
 
+    final baseTextTheme = GoogleFonts.interTextTheme(
+      ThemeData(brightness: Brightness.light).textTheme,
+    );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      fontFamily: 'Inter',
       scaffoldBackgroundColor: surfaceLight,
+      pageTransitionsTheme: _pageTransitionsTheme,
 
       // AppBar
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
-        foregroundColor: Color(0xFF0F172A),
+        foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
+        scrolledUnderElevation: 0.5,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          fontFamily: 'Inter',
+        titleTextStyle: GoogleFonts.inter(
           fontWeight: FontWeight.w600,
           fontSize: 18,
-          color: Color(0xFF0F172A),
+          color: const Color(0xFF0F172A),
         ),
-        iconTheme: IconThemeData(color: Color(0xFF0F172A)),
+        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
       ),
 
       // Cards
@@ -104,8 +120,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontFamily: 'Inter',
+          textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -116,8 +131,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
-          textStyle: const TextStyle(
-            fontFamily: 'Inter',
+          textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -130,16 +144,44 @@ class AppTheme {
         unselectedItemColor: Color(0xFF94A3B8),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
       ),
 
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFFF1F5F9),
         selectedColor: const Color(0xFFDBEAFE),
-        labelStyle: const TextStyle(fontSize: 13, fontFamily: 'Inter'),
+        labelStyle: const TextStyle(fontSize: 13),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+      ),
+
+      // SnackBar
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 4,
+      ),
+
+      // Dialog
+      dialogTheme: DialogTheme(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 8,
+      ),
+
+      // Tooltip
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: const TextStyle(color: Colors.white, fontSize: 12),
       ),
 
       // Divider
@@ -150,7 +192,7 @@ class AppTheme {
       ),
 
       // Text
-      textTheme: _textTheme(Brightness.light),
+      textTheme: _textTheme(baseTextTheme, Brightness.light),
     );
   }
 
@@ -162,18 +204,23 @@ class AppTheme {
       surface: surfaceDark,
     );
 
+    final baseTextTheme = GoogleFonts.interTextTheme(
+      ThemeData(brightness: Brightness.dark).textTheme,
+    );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      fontFamily: 'Inter',
       scaffoldBackgroundColor: surfaceDark,
+      pageTransitionsTheme: _pageTransitionsTheme,
+
       appBarTheme: AppBarTheme(
         backgroundColor: cardDark,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0.5,
         centerTitle: false,
-        titleTextStyle: const TextStyle(
-          fontFamily: 'Inter',
+        titleTextStyle: GoogleFonts.inter(
           fontWeight: FontWeight.w600,
           fontSize: 18,
           color: Colors.white,
@@ -217,8 +264,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontFamily: 'Inter',
+          textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -230,74 +276,96 @@ class AppTheme {
         unselectedItemColor: const Color(0xFF64748B),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFF1E293B),
+        selectedColor: const Color(0xFF1E3A5F),
+        labelStyle: const TextStyle(fontSize: 13),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 4,
+      ),
+      dialogTheme: DialogTheme(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 8,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE2E8F0),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: const TextStyle(color: Color(0xFF0F172A), fontSize: 12),
       ),
       dividerTheme: const DividerThemeData(
         color: Color(0xFF334155),
         thickness: 1,
         space: 1,
       ),
-      textTheme: _textTheme(Brightness.dark),
+      textTheme: _textTheme(baseTextTheme, Brightness.dark),
     );
   }
 
-  static TextTheme _textTheme(Brightness brightness) {
+  static TextTheme _textTheme(TextTheme base, Brightness brightness) {
     final color =
         brightness == Brightness.light ? const Color(0xFF0F172A) : Colors.white;
     final subtleColor = brightness == Brightness.light
         ? const Color(0xFF64748B)
         : const Color(0xFF94A3B8);
 
-    return TextTheme(
-      displayLarge: TextStyle(
-        fontFamily: 'Inter',
+    return base.copyWith(
+      displayLarge: base.displayLarge?.copyWith(
         fontWeight: FontWeight.w700,
         fontSize: 32,
         color: color,
+        letterSpacing: -0.5,
       ),
-      displaySmall: TextStyle(
-        fontFamily: 'Inter',
+      displaySmall: base.displaySmall?.copyWith(
         fontWeight: FontWeight.w600,
         fontSize: 24,
         color: color,
       ),
-      headlineMedium: TextStyle(
-        fontFamily: 'Inter',
+      headlineMedium: base.headlineMedium?.copyWith(
         fontWeight: FontWeight.w600,
         fontSize: 20,
         color: color,
       ),
-      titleLarge: TextStyle(
-        fontFamily: 'Inter',
+      titleLarge: base.titleLarge?.copyWith(
         fontWeight: FontWeight.w600,
         fontSize: 18,
         color: color,
       ),
-      titleMedium: TextStyle(
-        fontFamily: 'Inter',
+      titleMedium: base.titleMedium?.copyWith(
         fontWeight: FontWeight.w500,
         fontSize: 16,
         color: color,
       ),
-      bodyLarge: TextStyle(
-        fontFamily: 'Inter',
+      bodyLarge: base.bodyLarge?.copyWith(
         fontWeight: FontWeight.w400,
         fontSize: 16,
         color: color,
       ),
-      bodyMedium: TextStyle(
-        fontFamily: 'Inter',
+      bodyMedium: base.bodyMedium?.copyWith(
         fontWeight: FontWeight.w400,
         fontSize: 14,
         color: subtleColor,
       ),
-      labelLarge: TextStyle(
-        fontFamily: 'Inter',
+      labelLarge: base.labelLarge?.copyWith(
         fontWeight: FontWeight.w600,
         fontSize: 14,
         color: color,
       ),
-      labelSmall: TextStyle(
-        fontFamily: 'Inter',
+      labelSmall: base.labelSmall?.copyWith(
         fontWeight: FontWeight.w500,
         fontSize: 12,
         color: subtleColor,

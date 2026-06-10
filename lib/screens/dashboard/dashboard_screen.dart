@@ -8,6 +8,7 @@ import '../../utils/app_constants.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/stat_card.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -27,6 +28,7 @@ class DashboardScreen extends ConsumerWidget {
               user?.name ?? 'Guest User',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
                   ),
             ),
             Text(
@@ -36,7 +38,8 @@ class DashboardScreen extends ConsumerWidget {
                         .textTheme
                         .bodySmall
                         ?.color
-                        ?.withValues(alpha: 0.7),
+                        ?.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
                   ),
             ),
           ],
@@ -56,24 +59,36 @@ class DashboardScreen extends ConsumerWidget {
           PopupMenuButton<String>(
             icon: CircleAvatar(
               radius: 18,
-              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
               child: Text(
                 Formatters.initials(user?.name ?? '?'),
                 style: const TextStyle(
                   color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
+              ),
+            ),
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                width: 1,
               ),
             ),
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
-                  children: const [
-                    Icon(Icons.logout, size: 18),
-                    SizedBox(width: 10),
-                    Text('Sign out'),
+                  children: [
+                    Icon(
+                      Icons.logout_rounded, 
+                      size: 18, 
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('Sign out'),
                   ],
                 ),
               ),
@@ -87,28 +102,44 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: statsAsync.when(
-        loading: () => const _DashboardSkeleton(),
-        error: (err, _) => _ErrorView(
-          message: err.toString(),
-          onRetry: () =>
-              ref.read(dashboardStatsProvider.notifier).refresh(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              AppTheme.primaryColor.withOpacity(0.02),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
         ),
-        data: (stats) => RefreshIndicator(
-          onRefresh: () =>
-              ref.read(dashboardStatsProvider.notifier).refresh(),
-          child: _DashboardContent(stats: stats),
+        child: statsAsync.when(
+          loading: () => const _DashboardSkeleton(),
+          error: (err, _) => _ErrorView(
+            message: err.toString(),
+            onRetry: () =>
+                ref.read(dashboardStatsProvider.notifier).refresh(),
+          ),
+          data: (stats) => RefreshIndicator(
+            color: AppTheme.primaryColor,
+            onRefresh: () =>
+                ref.read(dashboardStatsProvider.notifier).refresh(),
+            child: _DashboardContent(stats: stats),
+          ),
         ),
       ),
     );
   }
 
   void _confirmLogout(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sign out'),
-        content: const Text('Are you sure you want to sign out?'),
+        content: const Text('Are you sure you want to sign out of your account?'),
+        backgroundColor: isDark ? AppTheme.cardDark : Colors.white,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -152,9 +183,10 @@ class _DashboardContent extends StatelessWidget {
             growth: stats.revenueGrowth,
             icon: Icons.attach_money_rounded,
             iconColor: AppTheme.primaryColor,
-            iconBgColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+            iconBgColor: AppTheme.primaryColor.withOpacity(0.1),
+            index: 0,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Row: Total Customers and Total Sales
           Row(
             children: [
@@ -165,10 +197,11 @@ class _DashboardContent extends StatelessWidget {
                   growth: stats.customersGrowth,
                   icon: Icons.people_outline,
                   iconColor: AppTheme.successColor,
-                  iconBgColor: AppTheme.successColor.withValues(alpha: 0.1),
+                  iconBgColor: AppTheme.successColor.withOpacity(0.1),
+                  index: 1,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: StatCard(
                   title: 'Total Sales',
@@ -176,11 +209,13 @@ class _DashboardContent extends StatelessWidget {
                   growth: stats.ordersGrowth,
                   icon: Icons.shopping_bag_outlined,
                   iconColor: AppTheme.infoColor,
-                  iconBgColor: AppTheme.infoColor.withValues(alpha: 0.1),
+                  iconBgColor: AppTheme.infoColor.withOpacity(0.1),
+                  index: 2,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -194,36 +229,22 @@ class _DashboardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.pagePadding),
-      child: Column(
-        children: [
-          const _SkeletonCard(height: 120),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _SkeletonCard(height: 100)),
-              const SizedBox(width: 12),
-              Expanded(child: _SkeletonCard(height: 100)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SkeletonCard extends StatelessWidget {
-  const _SkeletonCard({required this.height});
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+    return ShimmerLoading(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.pagePadding),
+        child: Column(
+          children: [
+            const ShimmerBox(height: 130),
+            const SizedBox(height: 16),
+            Row(
+              children: const [
+                Expanded(child: ShimmerBox(height: 120)),
+                SizedBox(width: 16),
+                Expanded(child: ShimmerBox(height: 120)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -245,15 +266,24 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.wifi_off_rounded,
-              size: 64,
-              color: Color(0xFF94A3B8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.errorColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                size: 48,
+                color: AppTheme.errorColor,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               'Unable to load data',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -264,10 +294,13 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(160, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
